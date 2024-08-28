@@ -96,12 +96,14 @@ class NeuralNetwork:
                 # Backward propagation
                 error = self.loss_function.backward(y_train[j], output)
 
-                # Collect parameters and gradients
+                for layer in reversed(self.layers):
+                    error = layer.backward(error, 0.01)  # learning rate not used here
+
+                # Collect parameters and gradients from all trainable layers
                 params = []
                 grads = []
 
-                for layer in reversed(self.layers):
-                    error = layer.backward(error, 0.01)  # learning rate not used here
+                for layer in self.layers:
                     if hasattr(layer, 'weights'):
                         params.extend([layer.weights, layer.biases])
                         grads.extend([layer.dweights, layer.dbiases])
