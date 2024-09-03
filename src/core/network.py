@@ -67,7 +67,7 @@ class NeuralNetwork:
 
         return np.array(result)
 
-    def fit(self, x_train, y_train, epochs=100, verbose=False, validation_split=0.0):
+    def fit(self, x_train, y_train, epochs=100, verbose=False, validation_split=0.0, batch_size=32):
         """Train the neural network."""
         if not self.compiled:
             raise ValueError("Model must be compiled before training")
@@ -80,21 +80,31 @@ class NeuralNetwork:
         history = {'loss': []}
         samples = len(x_train)
 
+        # Use batch processing if batch_size is specified and > 1
+        if batch_size > 1 and samples > batch_size:
+            return self._fit_batched(x_train, y_train, epochs, verbose, batch_size, history)
+
+        # Original sample-by-sample training
         for epoch in range(epochs):
             epoch_loss = 0
 
+            # Shuffle data each epoch
+            indices = np.random.permutation(samples)
+            x_shuffled = x_train[indices]
+            y_shuffled = y_train[indices]
+
             for j in range(samples):
                 # Forward propagation
-                output = x_train[j]
+                output = x_shuffled[j]
                 for layer in self.layers:
                     output = layer.forward(output)
 
                 # Compute loss
-                loss_value = self.loss_function.forward(y_train[j], output)
+                loss_value = self.loss_function.forward(y_shuffled[j], output)
                 epoch_loss += loss_value
 
                 # Backward propagation
-                error = self.loss_function.backward(y_train[j], output)
+                error = self.loss_function.backward(y_shuffled[j], output)
 
                 for layer in reversed(self.layers):
                     error = layer.backward(error, 0.01)  # learning rate not used here
@@ -116,7 +126,87 @@ class NeuralNetwork:
             epoch_loss /= samples
             history['loss'].append(epoch_loss)
 
-            if verbose and (epoch % 100 == 0 or epoch == epochs - 1):
+            if verbose and (epoch % 10 == 0 or epoch == epochs - 1):
+                print(f'Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss:.6f}')
+
+        return history
+
+    def _fit_batched(self, x_train, y_train, epochs, verbose, batch_size, history):
+        """Train using mini-batches for better performance."""
+        samples = len(x_train)
+
+        for epoch in range(epochs):
+            epoch_loss = 0
+            num_batches = 0
+
+            # Shuffle data each epoch
+            indices = np.random.permutation(samples)
+            x_shuffled = x_train[indices]
+            y_shuffled = y_train[indices]
+
+            # Process in batches
+            for i in range(0, samples, batch_size):
+                end_idx = min(i + batch_size, samples)
+                batch_x = x_shuffled[i:end_idx]
+                batch_y = y_shuffled[i:end_idx]
+
+                batch_loss = 0
+
+                # Accumulate gradients over batch
+                accumulated_grads = {}
+
+                for j in range(len(batch_x)):
+                    # Forward propagation
+                    output = batch_x[j]
+                    for layer in self.layers:
+                        output = layer.forward(output)
+
+                    # Compute loss
+                    loss_value = self.loss_function.forward(batch_y[j], output)
+                    batch_loss += loss_value
+
+                    # Backward propagation
+                    error = self.loss_function.backward(batch_y[j], output)
+
+                    for layer in reversed(self.layers):
+                        error = layer.backward(error, 0.01)
+
+                    # Accumulate gradients
+                    for layer in self.layers:
+                        if hasattr(layer, 'weights'):
+                            layer_id = id(layer)
+                            if layer_id not in accumulated_grads:
+                                accumulated_grads[layer_id] = {
+                                    'dweights': np.zeros_like(layer.weights),
+                                    'dbiases': np.zeros_like(layer.biases)
+                                }
+                            accumulated_grads[layer_id]['dweights'] += layer.dweights
+                            accumulated_grads[layer_id]['dbiases'] += layer.dbiases
+
+                # Average gradients and update parameters
+                params = []
+                grads = []
+
+                for layer in self.layers:
+                    if hasattr(layer, 'weights'):
+                        layer_id = id(layer)
+                        avg_dweights = accumulated_grads[layer_id]['dweights'] / len(batch_x)
+                        avg_dbiases = accumulated_grads[layer_id]['dbiases'] / len(batch_x)
+
+                        params.extend([layer.weights, layer.biases])
+                        grads.extend([avg_dweights, avg_dbiases])
+
+                if params and grads:
+                    self.optimizer.update(params, grads)
+
+                epoch_loss += batch_loss
+                num_batches += 1
+
+            # Average loss
+            epoch_loss /= samples
+            history['loss'].append(epoch_loss)
+
+            if verbose and (epoch % 10 == 0 or epoch == epochs - 1):
                 print(f'Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss:.6f}')
 
         return history
