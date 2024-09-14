@@ -4,7 +4,18 @@ import numpy as np
 
 
 class NeuralNetwork:
-    """A simple neural network implementation."""
+    """
+    A neural network implementation from scratch.
+
+    This class provides a simple interface for building, training, and using
+    neural networks with various architectures, optimizers, and loss functions.
+
+    Attributes:
+        layers (list): List of network layers
+        loss_function: Loss function for training
+        optimizer: Optimization algorithm for parameter updates
+        compiled (bool): Whether the network has been compiled
+    """
 
     def __init__(self):
         self.layers = []
