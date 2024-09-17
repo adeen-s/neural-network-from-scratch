@@ -61,9 +61,30 @@ class Tanh(Activation):
 
 
 class Softmax(Layer):
-    """Softmax activation function."""
+    """
+    Softmax activation function.
+
+    Applies the softmax function to convert logits to probabilities.
+    Uses numerical stability techniques to prevent overflow.
+
+    The softmax function is defined as:
+    softmax(x_i) = exp(x_i - max(x)) / sum(exp(x_j - max(x)))
+
+    Note:
+        When used with categorical cross-entropy loss, the combined gradient
+        simplifies to (y_pred - y_true), which is handled in the loss function.
+    """
 
     def forward(self, input_data):
+        """
+        Forward pass: apply softmax activation
+
+        Args:
+            input_data (numpy.ndarray): Input logits
+
+        Returns:
+            numpy.ndarray: Softmax probabilities (sum to 1)
+        """
         self.input = input_data
         # Subtract max for numerical stability
         exp_values = np.exp(input_data - np.max(input_data))
@@ -71,6 +92,24 @@ class Softmax(Layer):
         return self.output
 
     def backward(self, output_gradient, learning_rate=None):
-        # For softmax, the gradient computation is more complex
-        # This is a simplified version that works with categorical crossentropy
+        """
+        Backward pass: compute softmax gradients
+
+        Args:
+            output_gradient (numpy.ndarray): Gradient from the next layer
+            learning_rate (float, optional): Learning rate (unused)
+
+        Returns:
+            numpy.ndarray: Gradient w.r.t. input
+
+        Note:
+            For softmax + categorical cross-entropy, the gradient computation
+            is simplified and handled in the loss function.
+        """
+        # For softmax with categorical crossentropy, the gradient simplifies
+        # When used with categorical crossentropy, the combined gradient is just (y_pred - y_true)
+        # This is handled in the loss function, so we just pass through the gradient
+        # but ensure proper shape
+        if output_gradient.ndim == 1:
+            output_gradient = output_gradient.reshape(-1, 1)
         return output_gradient
