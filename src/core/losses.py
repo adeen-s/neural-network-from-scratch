@@ -28,19 +28,64 @@ class MeanSquaredError(Loss):
 
 
 class CategoricalCrossentropy(Loss):
-    """Categorical cross-entropy loss function."""
+    """
+    Categorical cross-entropy loss function.
+
+    Used for multi-class classification problems where each sample belongs
+    to exactly one class. Expects one-hot encoded target labels.
+
+    The loss is computed as: -sum(y_true * log(y_pred))
+
+    Note:
+        When used with softmax activation, the gradient computation simplifies
+        to (y_pred - y_true), which is more numerically stable.
+    """
 
     def forward(self, y_true, y_pred):
-        """Calculate categorical cross-entropy loss."""
+        """
+        Calculate categorical cross-entropy loss.
+
+        Args:
+            y_true (numpy.ndarray): True labels (one-hot encoded)
+            y_pred (numpy.ndarray): Predicted probabilities
+
+        Returns:
+            float: Loss value
+        """
+        # Ensure proper shapes
+        if y_pred.ndim == 1:
+            y_pred = y_pred.reshape(-1, 1)
+        if y_true.ndim == 1:
+            y_true = y_true.reshape(-1, 1)
+
         # Clip predictions to prevent log(0)
         y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
         return -np.sum(y_true * np.log(y_pred))
 
     def backward(self, y_true, y_pred):
-        """Calculate categorical cross-entropy gradient."""
-        # Clip predictions to prevent division by 0
-        y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
-        return -y_true / y_pred
+        """
+        Calculate categorical cross-entropy gradient.
+
+        Args:
+            y_true (numpy.ndarray): True labels (one-hot encoded)
+            y_pred (numpy.ndarray): Predicted probabilities
+
+        Returns:
+            numpy.ndarray: Gradient w.r.t. predictions
+
+        Note:
+            For softmax + categorical cross-entropy, this returns (y_pred - y_true)
+            which is the simplified and numerically stable gradient.
+        """
+        # Ensure proper shapes
+        if y_pred.ndim == 1:
+            y_pred = y_pred.reshape(-1, 1)
+        if y_true.ndim == 1:
+            y_true = y_true.reshape(-1, 1)
+
+        # For softmax + categorical crossentropy, the gradient simplifies to (y_pred - y_true)
+        # This is more numerically stable than -y_true / y_pred
+        return y_pred - y_true
 
 
 class BinaryCrossentropy(Loss):
