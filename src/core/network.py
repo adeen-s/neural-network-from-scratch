@@ -61,7 +61,26 @@ class NeuralNetwork:
         self.compiled = True
 
     def predict(self, input_data):
-        """Make predictions on input data."""
+        """
+        Make predictions on input data.
+
+        Args:
+            input_data (array-like): Input data for prediction. Can be:
+                - 1D array for single sample
+                - 2D array for multiple samples
+                - List that will be converted to numpy array
+
+        Returns:
+            numpy.ndarray: Predictions with shape (n_samples, n_outputs).
+                          Outputs are flattened for easier handling.
+
+        Raises:
+            ValueError: If network is not compiled before prediction.
+
+        Example:
+            >>> predictions = network.predict(X_test)
+            >>> print(predictions.shape)  # (n_samples, n_classes)
+        """
         if isinstance(input_data, list):
             input_data = np.array(input_data)
 
@@ -74,12 +93,33 @@ class NeuralNetwork:
             output = input_data[i]
             for layer in self.layers:
                 output = layer.forward(output)
-            result.append(output)
+            # Flatten output to 1D array for easier handling
+            result.append(output.flatten())
 
         return np.array(result)
 
     def fit(self, x_train, y_train, epochs=100, verbose=False, validation_split=0.0, batch_size=32):
-        """Train the neural network."""
+        """
+        Train the neural network using backpropagation.
+
+        Args:
+            x_train (array-like): Training input data
+            y_train (array-like): Training target data
+            epochs (int): Number of training epochs (default: 100)
+            verbose (bool): Whether to print training progress (default: False)
+            validation_split (float): Fraction of data for validation (currently unused)
+            batch_size (int): Size of mini-batches for training (default: 32)
+
+        Returns:
+            dict: Training history containing loss values for each epoch
+
+        Raises:
+            ValueError: If network is not compiled before training
+
+        Example:
+            >>> history = network.fit(X_train, y_train, epochs=50, verbose=True)
+            >>> print(f"Final loss: {history['loss'][-1]:.6f}")
+        """
         if not self.compiled:
             raise ValueError("Model must be compiled before training")
 
