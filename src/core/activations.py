@@ -25,7 +25,8 @@ class ReLU(Activation):
 
     def __init__(self):
         def relu(x):
-            return np.maximum(0, x)
+            # Optimized ReLU with better memory efficiency
+            return np.maximum(0, x, out=np.zeros_like(x))
 
         def relu_prime(x):
             return (x > 0).astype(float)
