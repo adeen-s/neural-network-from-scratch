@@ -61,6 +61,12 @@ class Dense(Layer):
         Returns:
             numpy.ndarray: Output with shape (output_size, 1)
         """
+        # Input validation
+        if not isinstance(input_data, np.ndarray):
+            raise TypeError("Input data must be a numpy array")
+        if input_data.size == 0:
+            raise ValueError("Input data cannot be empty")
+
         self.input = input_data.reshape(-1, 1) if input_data.ndim == 1 else input_data
         return np.dot(self.weights, self.input) + self.biases
 
