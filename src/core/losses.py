@@ -20,6 +20,9 @@ class MeanSquaredError(Loss):
 
     def forward(self, y_true, y_pred):
         """Calculate MSE loss."""
+        # Input validation
+        if y_true.shape != y_pred.shape:
+            raise ValueError(f"Shape mismatch: y_true {y_true.shape} vs y_pred {y_pred.shape}")
         return np.mean(np.power(y_true - y_pred, 2))
 
     def backward(self, y_true, y_pred):
