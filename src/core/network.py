@@ -25,6 +25,9 @@ class NeuralNetwork:
 
     def add(self, layer):
         """Add a layer to the network."""
+        # Validate layer type
+        if not hasattr(layer, 'forward') or not hasattr(layer, 'backward'):
+            raise TypeError("Layer must implement forward() and backward() methods")
         self.layers.append(layer)
 
     def compile(self, optimizer='sgd', loss='mse', learning_rate=0.01):
