@@ -114,3 +114,45 @@ class Softmax(Layer):
         if output_gradient.ndim == 1:
             output_gradient = output_gradient.reshape(-1, 1)
         return output_gradient
+
+
+class LeakyReLU(Activation):
+    """Leaky ReLU activation function."""
+
+    def __init__(self, alpha=0.01):
+        """
+        Initialize Leaky ReLU with leak parameter.
+
+        Args:
+            alpha (float): Leak parameter for negative values
+        """
+        self.alpha = alpha
+
+        def leaky_relu(x):
+            return np.where(x > 0, x, alpha * x)
+
+        def leaky_relu_prime(x):
+            return np.where(x > 0, 1, alpha)
+
+        super().__init__(leaky_relu, leaky_relu_prime)
+
+
+class ELU(Activation):
+    """Exponential Linear Unit activation function."""
+
+    def __init__(self, alpha=1.0):
+        """
+        Initialize ELU with alpha parameter.
+
+        Args:
+            alpha (float): Scale parameter for negative values
+        """
+        self.alpha = alpha
+
+        def elu(x):
+            return np.where(x > 0, x, alpha * (np.exp(x) - 1))
+
+        def elu_prime(x):
+            return np.where(x > 0, 1, alpha * np.exp(x))
+
+        super().__init__(elu, elu_prime)
